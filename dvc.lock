@@ -1,0 +1,30 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: python scripts/update_epl_data.py
+    deps:
+    - path: data/final_dataset.csv
+      hash: md5
+      md5: 33a9263ed06f8da2d409affcb67a52b3
+      size: 1319348
+    - path: scripts/update_epl_data.py
+      hash: md5
+      md5: 0a3e1d0115c0dbb3cc6149d543d94ab8
+      size: 3056
+    params:
+      params.yaml:
+        features.chi2percentile: 50
+        features.data_path: data/final_dataset.csv
+    outs:
+    - path: data/pipeline.pkl
+      hash: md5
+      md5: 0f235441445b05a59f1cbec9d3a8f4e8
+      size: 23579
+    - path: data/processed_test.csv
+      hash: md5
+      md5: 021d362fd8b2165243fb402556132b24
+      size: 161621
+    - path: data/processed_train.csv
+      hash: md5
+      md5: 0ece5196c09b7c04da3da6a19c328c8d
+      size: 657163

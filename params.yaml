@@ -1,0 +1,3 @@
+features:
+  chi2percentile: 50
+  data_path: data/final_dataset.csv

@@ -1,0 +1,13 @@
+stages:
+  prepare:
+    cmd: python scripts/update_epl_data.py
+    deps:
+      - data/final_dataset.csv
+      - scripts/update_epl_data.py
+    outs:
+      - data/pipeline.pkl
+      - data/processed_train.csv
+      - data/processed_test.csv
+    params:
+      - features.chi2percentile
+      - features.data_path
