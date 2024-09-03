@@ -1,0 +1,5 @@
+outs:
+- md5: 8ccfa199005339def71ce22e1c408b79
+  size: 1802
+  hash: md5
+  path: EPLStandings.csv
