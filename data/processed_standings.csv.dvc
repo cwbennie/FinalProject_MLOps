@@ -1,0 +1,5 @@
+outs:
+- md5: 5e3c5d399d92e5c2a26dc387e73405b1
+  size: 4319
+  hash: md5
+  path: processed_standings.csv
