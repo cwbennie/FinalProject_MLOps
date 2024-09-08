@@ -89,8 +89,10 @@ def get_year(row):
     yr = row.split('/')[2]
     if len(yr) > 2:
         yr = yr[-2:]
+    # if the month is between Aug-Dec, return same year
     if int(month) >= 8:
         return '20' + yr
+    # Otherwise the season is recorded as previous year
     else:
         yr = '20' + str(int(yr) - 1)
         if len(yr) == 3:
