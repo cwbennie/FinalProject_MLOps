@@ -58,11 +58,11 @@ def update_standings(standings: pd.DataFrame) -> pd.DataFrame:
          )
     standings = addl_standings.merge(right=standings, how='right',
                                      left_on='Team', right_on='Team')
-    standings.fillna(21, inplace=True)
+    standings = standings.fillna(21)
     return standings
 
 
-def get_away_hist(row: pd.DataFrame, standings: pd.DataFrame) -> float:
+def get_away_hist(row: pd.Series, standings: pd.DataFrame) -> float:
     try:
         yr = str(int(row['Year']) - 1)
         team = row['AwayTeam']
@@ -72,7 +72,7 @@ def get_away_hist(row: pd.DataFrame, standings: pd.DataFrame) -> float:
         return 21.0
 
 
-def get_home_hist(row: pd.DataFrame, standings: pd.DataFrame) -> float:
+def get_home_hist(row: pd.Series, standings: pd.DataFrame) -> float:
     try:
         yr = str(int(row['Year']) - 1)
         team = row['HomeTeam']
@@ -80,6 +80,22 @@ def get_home_hist(row: pd.DataFrame, standings: pd.DataFrame) -> float:
         return standing.iloc[0]
     except (IndexError, KeyError):
         return 21.0
+
+
+def get_year(row):
+    """Function to be used with EPL Standings to track previous year's
+    EPL Standing for each team"""
+    month = row.split('/')[1]
+    yr = row.split('/')[2]
+    if len(yr) > 2:
+        yr = yr[-2:]
+    if int(month) >= 8:
+        return '20' + yr
+    else:
+        yr = '20' + str(int(yr) - 1)
+        if len(yr) == 3:
+            yr = yr[:2] + '0' + yr[-1]
+        return yr
 
 
 def process_data(data_path: str, standings_path: str,
@@ -98,15 +114,20 @@ def process_data(data_path: str, standings_path: str,
     # update data to include HomeWins and AwayWins
     data['HomeWins'] = data.apply(get_home_wins, axis=1)
     data['AwayWins'] = data.apply(get_away_wins, axis=1)
+    data['Year'] = data['Date'].apply(get_year)
 
     # update data to include previous year rankings
-    data['HomeStanding'] = data.apply(get_home_hist, axis=1,
-                                      standings=standings)
-    data['AwayStanding'] = data.apply(get_away_hist, axis=1,
-                                      standings=standings)
+    data['HomeStanding'] = data.apply(lambda row:
+                                      get_home_hist(row, standings=standings),
+                                      axis=1)
+    data['AwayStanding'] = data.apply(lambda row:
+                                      get_away_hist(row, standings=standings),
+                                      axis=1)
 
     # drop columns that are too cardinal (*FormPtsStr)
     data = data.drop(columns=['HTFormPtsStr', 'ATFormPtsStr', 'Result'])
+    # drop columns that can indicate the result
+    data = data.drop(columns=['FTHG', 'FTAG', 'FTR'])
 
     # encode categorical columns
     proc_data, encoders = update_cols(data)
@@ -115,9 +136,19 @@ def process_data(data_path: str, standings_path: str,
                                         percentile=feature_percentile)
 
     proc_data = feature_selector.fit_transform(proc_data, y)
+
+    feats = feature_selector.feature_names_in_
+    out_feats = feature_selector.get_feature_names_out()
+    with open('features.txt', 'w') as f:
+        for feat in feats:
+            f.write(f"{feat}\n")
+    with open('selected_feats.txt', 'w') as f:
+        for feat in out_feats:
+            f.write(f"{feat}\n")
+
     encoders['feature_selector'] = feature_selector
 
-    proc_data = pd.DataFrame(proc_data)
+    proc_data = pd.DataFrame(proc_data, columns=out_feats)
 
     proc_data['Result'] = y
 

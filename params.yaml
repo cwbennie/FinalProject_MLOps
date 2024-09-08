@@ -1,4 +1,4 @@
 features:
-  chi2percentile: 50
+  chi2percentile: 75
   data_path: data/final_dataset.csv
   standings_path: data/EPLStandings.csv

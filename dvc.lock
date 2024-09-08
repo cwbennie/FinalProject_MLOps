@@ -9,22 +9,22 @@ stages:
       size: 1319348
     - path: scripts/update_epl_data.py
       hash: md5
-      md5: 6d9a9ab3bb36e81eea21bd042e585fa0
-      size: 5238
+      md5: 2d2cb6f606afb1f0a0cf0e9cdf0cd20c
+      size: 6229
     params:
       params.yaml:
-        features.chi2percentile: 50
+        features.chi2percentile: 75
         features.data_path: data/final_dataset.csv
     outs:
     - path: data/pipeline.pkl
       hash: md5
-      md5: 7f04baababea2636fa94a09c1e408ac0
-      size: 23641
+      md5: e04725c39665fcb01bd715786a5675ba
+      size: 23713
     - path: data/processed_test.csv
       hash: md5
-      md5: 40603851b15f052645e507157a66be02
-      size: 165675
+      md5: bad1975f978d8726a69d3507d5e83c4f
+      size: 201715
     - path: data/processed_train.csv
       hash: md5
-      md5: 951befca3fa61a9e2f3cdf4aa85e597a
-      size: 666795
+      md5: ca8f56a57937867b2210a67b2a97e55b
+      size: 805493
