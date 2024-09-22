@@ -4,3 +4,7 @@ features.txt
 homestanding.txt
 sandbox.ipynb
 selected_feats.txt
+scripts/.metaflow
+scripts/mlartifacts/
+scripts/mlflow.db
+scripts/mlruns/
