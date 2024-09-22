@@ -7,7 +7,7 @@ class EPLPredict(FlowSpec):
     output_path = Parameter('output', type=str,
                             default='../data/metaflow_predictions.csv')
     partial = Parameter('partial_inference', type=bool,
-                        default=False)
+                        default=True)
     test_size = Parameter('test_size', type=float, default=0.2)
 
     @step
@@ -48,7 +48,7 @@ class EPLPredict(FlowSpec):
 
         print('Test Predictions Completed.')
         print(f'Test accuracy: {self.accuracy}')
-        print(f'Test F1: {self.f1_score}')
+        print(f'Test F1: {self.mod_f1}')
         self.next(self.save_predictions)
 
     @step

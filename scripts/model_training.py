@@ -1,9 +1,10 @@
-from typing import Tuple
+from typing import Tuple, List
 import mlflow
 import numpy as np
 import pandas as pd
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold,\
+    RandomizedSearchCV, GridSearchCV, train_test_split
 from sklearn.metrics import f1_score, accuracy_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -142,9 +143,8 @@ def mlflow_obj(params: dict) -> dict:
     return {'loss': -acc, 'status': STATUS_OK, 'run_id': run_id}
 
 
-def hp_tuning(exp_name: str, train_data: pd.DataFrame,
-              train_y: pd.DataFrame, num_splits: int = 5,
-              random_state: int = 42) -> Tuple[dict, str]:
+def hp_tuning(train_data: pd.DataFrame, train_y: pd.DataFrame,
+              num_splits: int = 5, random_state: int = 42) -> Tuple[dict, str]:
     """
     Perform hyperparameter tuning using Hyperopt and log experiments in MLflow.
 
@@ -180,7 +180,7 @@ def hp_tuning(exp_name: str, train_data: pd.DataFrame,
             },
         {
             'type': 'random_forest',
-            'n_estimators': hp.randint('rf_n_estimators', 20, 200),
+            'n_estimators': hp.randint('rf_n_estimators', 20, 500),
             'max_features': hp.randint('rf_max_features', 2, 9),
             'criterion': hp.choice('criterion', ['gini', 'entropy']),
             'train_data': train_data, 'y': train_y, 'num_splits': num_splits,
@@ -194,7 +194,7 @@ def hp_tuning(exp_name: str, train_data: pd.DataFrame,
             'colsample_bynode': hp.choice('xgb_colsample_bynode',
                                           np.arange(0.3, 0.81, 0.1)),
             'n_estimators': hp.choice('xgb_n_estimators',
-                                      np.arange(100, 301, 50)),
+                                      np.arange(100, 1001, 50)),
             'objective': 'multi:softmax',
             'train_data': train_data, 'y': train_y, 'num_splits': num_splits,
             'random_state': random_state,
@@ -216,3 +216,89 @@ def hp_tuning(exp_name: str, train_data: pd.DataFrame,
     best_result['classifier_type'] = classifier_types[c_key]
 
     return best_result, best_run_id
+
+
+def get_param_grids(random_state: int = 42) -> List[Tuple[object, dict]]:
+
+    classifiers = [DecisionTreeClassifier(), RandomForestClassifier(),
+                   XGBClassifier()]
+    clf_names = ['decision_tree', 'random_forest', 'xgboost']
+    dt_params = {
+        'criterion': ['gini', 'entropy'],
+        'max_depth': [None] + list(range(1, 11)),
+        'min_samples_split': range(2, 10),
+        'random_state': [random_state]
+    }
+    rf_params = {
+        'criterion': ['gini', 'entropy'],
+        'max_features': range(2, 10),
+        'n_estimators': range(20, 501, 40),
+        'max_depth': range(2, 10),
+        'random_state': [random_state]
+    }
+    xgb_params = {
+        'objective': ['multi:softmax'],
+        'max_depth': range(2, 21),
+        'eta': np.arange(0.1, 0.51, 0.1),
+        'colsample_bynode': np.arange(0.3, 0.81, 0.1),
+        'n_estimators': range(100, 1001, 100),
+        'random_state': [random_state]
+    }
+    param_grids = [dt_params, rf_params, xgb_params]
+    return list(zip(classifiers, param_grids, clf_names))
+
+
+def search_cv(train_data: pd.DataFrame, train_y: pd.DataFrame,
+              clf_info: tuple, scoring: dict, grid: bool = True,
+              num_splits: int = 5, random_state: int = 42) -> Tuple[dict, str]:
+    clf, clf_grid, clf_name = clf_info
+    if grid:
+        search = GridSearchCV(estimator=clf, param_grid=clf_grid,
+                              cv=num_splits, n_jobs=-1,
+                              scoring=scoring)
+    else:
+        search = RandomizedSearchCV(estimator=clf,
+                                    param_distributions=clf_grid,
+                                    scoring=scoring, n_jobs=-1,
+                                    cv=num_splits, random_state=random_state)
+
+    train_x, val_x, tmp_y, val_y = train_test_split(train_data, train_y,
+                                                    test_size=0.2,
+                                                    random_state=random_state)
+
+    with mlflow.start_run() as run:
+        # fit grid search
+        search.fit(train_x, tmp_y)
+        # log parameters
+        mlflow.set_tag("Model", clf_name)
+        mlflow.log_params(search.best_params_)
+        mlflow.log_param('kfold_random_state', 42)
+
+        # determine best model and calculate validation metrics
+        best_mod = search.best_estimator_
+        y_preds = best_mod.predict(val_x)
+        val_acc = accuracy_score(val_y, y_preds)
+        mod_f1 = f1_score(val_y, y_preds, average='weighted')
+
+        # log metrics
+        mlflow.log_metric("validation_acc", val_acc)
+        mlflow.log_metric('f1_score', mod_f1)
+        mlflow.log_artifacts('save_data/')
+
+        # log models
+        if clf_name == 'xgboost':
+            mlflow.xgboost.log_model(best_mod, artifact_path='better_models')
+        else:
+            mlflow.sklearn.log_model(best_mod, artifact_path='better_models')
+
+        # retrieve run_id to be used in logging best model
+        run_id = run.info.run_id
+        mlflow.end_run()
+
+    mod_info = {'type': clf_name,
+                'accuracy': val_acc,
+                'f1_score': mod_f1,
+                'model': best_mod,
+                'run_id': run_id}
+
+    return mod_info
