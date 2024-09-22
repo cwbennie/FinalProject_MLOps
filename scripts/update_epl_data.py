@@ -1,11 +1,10 @@
+import pickle
 import pandas as pd
 import numpy as np
-import pickle
 import yaml
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.compose import ColumnTransformer, make_column_selector
+from sklearn.preprocessing import LabelEncoder
 from sklearn.pipeline import Pipeline
-from sklearn.feature_selection import SelectPercentile, chi2, f_classif
+from sklearn.feature_selection import SelectPercentile, f_classif
 from sklearn.model_selection import train_test_split
 
 
