@@ -14,6 +14,29 @@ from pathlib import Path
 def strat_kfold(model, X: pd.DataFrame, y: pd.DataFrame,
                 num_splits: int = 5, random_state: int = 42) \
                     -> Tuple[float, float]:
+    """
+    Perform stratified k-fold cross-validation on the given model.
+
+    Parameters:
+    -----------
+    model : estimator object
+        The machine learning model to be evaluated
+        (e.g., DecisionTreeClassifier).
+    X : pd.DataFrame
+        The feature data used for training and validation.
+    y : pd.DataFrame
+        The target labels.
+    num_splits : int, default=5
+        The number of splits for cross-validation.
+    random_state : int, default=42
+        Random seed for shuffling the data.
+
+    Returns:
+    --------
+    Tuple[float, float]
+        A tuple containing the mean accuracy and mean F1-score
+        across all folds.
+    """
     accs = list()
     f1_scores = list()
     skf = StratifiedKFold(n_splits=num_splits, shuffle=True,
@@ -34,8 +57,23 @@ def strat_kfold(model, X: pd.DataFrame, y: pd.DataFrame,
 
 
 def update_params(params: dict) -> Tuple[dict, dict]:
-    """Function to update parameter dictionary for hyperopt
-    objective function"""
+    """
+    Splits the parameter dictionary into model-specific and
+    non-model parameters.
+
+    Parameters:
+    -----------
+    params : dict
+        The parameter dictionary that includes both model and
+        non-model parameters.
+
+    Returns:
+    --------
+    Tuple[dict, dict]
+        A tuple containing two dictionaries:
+        - The updated model parameter dictionary.
+        - The non-model parameter dictionary (e.g., train data, labels, etc.).
+    """
     del params['exp_name']
     non_model_params = dict()
     nmp_names = ['type', 'train_data', 'y',
@@ -48,6 +86,22 @@ def update_params(params: dict) -> Tuple[dict, dict]:
 
 
 def mlflow_obj(params: dict) -> dict:
+    """
+    Train a model using the given parameters and log the results to MLflow.
+
+    Parameters:
+    -----------
+    params : dict
+        The hyperparameter dictionary used to configure and train the model.
+
+    Returns:
+    --------
+    dict
+        A dictionary containing:
+        - 'loss': The negative accuracy for minimization by Hyperopt.
+        - 'status': The status of the run (e.g., STATUS_OK).
+        - 'run_id': The MLflow run ID associated with the experiment.
+    """
     with mlflow.start_run() as run:
         params, id_params = update_params(params=params)
 
@@ -89,6 +143,28 @@ def mlflow_obj(params: dict) -> dict:
 def hp_tuning(exp_name: str, train_data: pd.DataFrame,
               train_y: pd.DataFrame, num_splits: int = 5,
               random_state: int = 42) -> Tuple[dict, str]:
+    """
+    Perform hyperparameter tuning using Hyperopt and log experiments in MLflow.
+
+    Parameters:
+    -----------
+    exp_name : str
+        The experiment name for MLflow.
+    train_data : pd.DataFrame
+        The feature data used for training.
+    train_y : pd.DataFrame
+        The target labels for training.
+    num_splits : int, default=5
+        The number of splits for cross-validation.
+    random_state : int, default=42
+        Random seed for reproducibility.
+
+    Returns:
+    --------
+    Tuple[dict, str]
+        - A dictionary with the best hyperparameters found by Hyperopt.
+        - The MLflow run ID for the best run.
+    """
     search_space = hp.choice('classifier_type', [
         {
             'type': 'decision_tree',

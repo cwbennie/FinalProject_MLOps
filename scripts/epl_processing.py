@@ -1,18 +1,29 @@
+from typing import Tuple
 import pandas as pd
 import numpy as np
-import pickle
-import yaml
-from typing import List, Tuple
 from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.pipeline import Pipeline
 from sklearn.feature_selection import SelectPercentile, chi2
 from sklearn.model_selection import train_test_split
-from sklearn import set_config
 
 
 def get_result(row: pd.DataFrame) -> str:
-    """Function to return the result of the match"""
+    """
+    Determine the result of a football match.
+
+    Parameters:
+    -----------
+    row : pd.DataFrame
+        A row of the dataframe containing match data including
+          FTHG (Full-time Home Goals) and FTAG (Full-time Away Goals).
+
+    Returns:
+    --------
+    str
+        'H' if home team wins, 'A' if away team wins, 'D' if
+        the match is a draw.
+    """
     if row['FTHG'] > row['FTAG']:
         return 'H'
     elif row['FTHG'] < row['FTAG']:
@@ -22,12 +33,38 @@ def get_result(row: pd.DataFrame) -> str:
 
 
 def get_home_wins(row: pd.DataFrame) -> int:
+    """
+    Calculate the number of home wins in the last five matches.
+
+    Parameters:
+    -----------
+    row : pd.DataFrame
+        A row of the dataframe containing the last five home match results.
+
+    Returns:
+    --------
+    int
+        Number of home wins in the last five matches.
+    """
     cols = ['HM1', 'HM2', 'HM3', 'HM4', 'HM5']
     wins = [1 for el in cols if row[el] == 'W']
     return len(wins)
 
 
 def get_away_wins(row: pd.DataFrame) -> int:
+    """
+    Calculate the number of away wins in the last five matches.
+
+    Parameters:
+    -----------
+    row : pd.DataFrame
+        A row of the dataframe containing the last five away match results.
+
+    Returns:
+    --------
+    int
+        Number of away wins in the last five matches.
+    """
     cols = ['AM1', 'AM2', 'AM3', 'AM4', 'AM5']
     wins = [1 for el in cols if row[el] == 'W']
     return len(wins)
@@ -36,9 +73,27 @@ def get_away_wins(row: pd.DataFrame) -> int:
 def update_pipeline(train_data: pd.DataFrame, test_data: pd.DataFrame,
                     train_y: pd.DataFrame, chi2pct: int = 75) -> \
                     Tuple[pd.DataFrame, pd.DataFrame]:
-    """Create a pipeline to transform necessary columns in the dataframe"""
-    # set config of Pipeline to pass column names through
-    # set_config(transform_output='pandas')
+    """
+    Create and apply a preprocessing pipeline that scales numerical features,
+    encodes categorical features, and selects features based on
+    chi-squared tests.
+
+    Parameters:
+    -----------
+    train_data : pd.DataFrame
+        The training data.
+    test_data : pd.DataFrame
+        The testing data.
+    train_y : pd.DataFrame
+        The target variable for the training data.
+    chi2pct : int, default=75
+        Percentile of features to keep based on the chi-squared test.
+
+    Returns:
+    --------
+    Tuple[pd.DataFrame, pd.DataFrame]
+        Transformed training and testing data as dataframes.
+    """
     # Pipeline object to transform numerical columns
     numeric_transformer = Pipeline(
         steps=[('scaler', StandardScaler())]
@@ -77,6 +132,20 @@ def update_pipeline(train_data: pd.DataFrame, test_data: pd.DataFrame,
 
 
 def update_standings(standings: pd.DataFrame) -> pd.DataFrame:
+    """
+    Update standings to include historical standings for teams not present
+    in the current standings data.
+
+    Parameters:
+    -----------
+    standings : pd.DataFrame
+        The current standings dataframe.
+
+    Returns:
+    --------
+    pd.DataFrame
+        Updated standings dataframe with historical data filled in.
+    """
     addl_standings = pd.DataFrame(
         {'Team': ['Man United', 'Arsenal', 'Leeds',
                   'Liverpool', 'Chelsea',
@@ -96,6 +165,23 @@ def update_standings(standings: pd.DataFrame) -> pd.DataFrame:
 
 def get_match_history(row: pd.Series, standings: pd.DataFrame,
                       home: bool = True) -> float:
+    """
+    Retrieve the standing of a team from the previous year.
+
+    Parameters:
+    -----------
+    row : pd.Series
+        A row of match data.
+    standings : pd.DataFrame
+        DataFrame containing the historical standings of teams.
+    home : bool, default=True
+        Whether to retrieve the home team standing. Set to False for away team.
+
+    Returns:
+    --------
+    float
+        The team's standing from the previous year. If not found, return 21.0.
+    """
     col = 'HomeTeam' if home else 'AwayTeam'
     try:
         yr = str(int(row['Year']) - 1)
@@ -106,29 +192,20 @@ def get_match_history(row: pd.Series, standings: pd.DataFrame,
         return 21.0
 
 
-def get_away_hist(row: pd.Series, standings: pd.DataFrame) -> float:
-    try:
-        yr = str(int(row['Year']) - 1)
-        team = row['AwayTeam']
-        standing = standings.loc[standings['Team'] == team, yr]
-        return standing.iloc[0]
-    except (IndexError, KeyError):
-        return 21.0
-
-
-def get_home_hist(row: pd.Series, standings: pd.DataFrame) -> float:
-    try:
-        yr = str(int(row['Year']) - 1)
-        team = row['HomeTeam']
-        standing = standings.loc[standings['Team'] == team, yr]
-        return standing.iloc[0]
-    except (IndexError, KeyError):
-        return 21.0
-
-
 def get_year(row):
-    """Function to be used with EPL Standings to track previous year's
-    EPL Standing for each team"""
+    """
+    Determine the year based on the match date.
+
+    Parameters:
+    -----------
+    row : str
+        A string representing the date of the match in the format 'DD/MM/YY'.
+
+    Returns:
+    --------
+    str
+        The year in which the match took place, based on the month and year.
+    """
     month = row.split('/')[1]
     yr = row.split('/')[2]
     if len(yr) > 2:
@@ -146,6 +223,22 @@ def get_year(row):
 
 def create_new_columns(epl_data: pd.DataFrame, standings: pd.DataFrame) \
       -> pd.DataFrame:
+    """
+    Create new columns for EPL match data, including results,
+    home and away wins, and previous standings.
+
+    Parameters:
+    -----------
+    epl_data : pd.DataFrame
+        The EPL match data.
+    standings : pd.DataFrame
+        The standings data for teams.
+
+    Returns:
+    --------
+    pd.DataFrame
+        The updated EPL data with new columns.
+    """
     # update data to include Result column
     epl_data['Result'] = epl_data.apply(get_result, axis=1)
 
@@ -167,6 +260,21 @@ def create_new_columns(epl_data: pd.DataFrame, standings: pd.DataFrame) \
 
 def update_targets(train_target: pd.DataFrame,
                    test_target: pd.DataFrame) -> pd.DataFrame:
+    """
+    Update and encode target columns for training and testing sets.
+
+    Parameters:
+    -----------
+    train_target : pd.DataFrame
+        The target variable for the training data.
+    test_target : pd.DataFrame
+        The target variable for the testing data.
+
+    Returns:
+    --------
+    pd.DataFrame
+        Encoded training and testing target variables.
+    """
     label_enc = LabelEncoder()
     train_target.reset_index(inplace=True)
     train_target.drop(columns='index', inplace=True)
@@ -181,6 +289,24 @@ def update_targets(train_target: pd.DataFrame,
 
 def process_data(epl_data: pd.DataFrame, standings_data: pd.DataFrame,
                  feature_percentile: int):
+    """
+    Process EPL match data by adding new columns, normalizing features,
+    and preparing target variables.
+
+    Parameters:
+    -----------
+    epl_data : pd.DataFrame
+        The EPL match data.
+    standings_data : pd.DataFrame
+        DataFrame containing historical standings.
+    feature_percentile : int
+        Percentile of features to keep based on the chi-squared test.
+
+    Returns:
+    --------
+    Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
+        The processed training data, testing data, and updated standings.
+    """
     # update the standings to reflect accurate data for all years
     standings = update_standings(standings=standings_data)
 
@@ -215,27 +341,3 @@ def process_data(epl_data: pd.DataFrame, standings_data: pd.DataFrame,
     test_data['Result'] = test_y
 
     return train_data, test_data, standings
-
-
-def save_data(train: pd.DataFrame, train_path: str,
-              test: pd.DataFrame, test_path: str,
-              standing_df: pd.DataFrame, standings_new: str,
-              pipe: Pipeline, pipe_name: str):
-    train.to_csv(train_path)
-    test.to_csv(test_path)
-    standing_df.to_csv(standings_new)
-
-    # save pipe
-    with open(pipe_name, 'wb') as file:
-        pickle.dump(pipe, file)
-
-# if __name__ == '__main__':
-
-#     train_df, test_df, standings = process_data(
-#         epl_data=data_path, standings_path=standings_path,
-#         feature_percentile=chi2pct)
-
-#     save_data(train_df, 'data/processed_train.csv',
-#               test_df, 'data/processed_test.csv',
-#               standings, 'data/processed_standings.csv',
-#               encoders, 'data/pipeline.pkl')
