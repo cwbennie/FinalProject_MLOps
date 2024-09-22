@@ -6,6 +6,9 @@ class EPLPredict(FlowSpec):
     classify outcomes of English Premier League matches."""
     output_path = Parameter('output', type=str,
                             default='../data/metaflow_predictions.csv')
+    partial = Parameter('partial_inference', type=bool,
+                        default=False)
+    test_size = Parameter('test_size', type=float, default=0.2)
 
     @step
     def start(self):
@@ -37,17 +40,11 @@ class EPLPredict(FlowSpec):
 
     @step
     def test_predict(self):
-        from sklearn.model_selection import train_test_split
-        from sklearn.metrics import f1_score, accuracy_score
+        from model_inference import predict
 
-        _, self.test_set, _, self.test_y = train_test_split(self.test_data,
-                                                            self.test_y,
-                                                            test_size=0.2)
-
-        self.predictions = self.logged_model.predict(self.test_set)
-        self.accuracy = accuracy_score(self.test_y, self.predictions)
-        self.f1_score = f1_score(self.test_y, self.predictions,
-                                 average='weighted')
+        self.predictions, self.accuracy, self.mod_f1 = predict(
+            model=self.logged_model, test_data=self.test_data,
+            test_y=self.test_y, partial=self.partial, test_size=self.test_size)
 
         print('Test Predictions Completed.')
         print(f'Test accuracy: {self.accuracy}')
