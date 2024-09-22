@@ -32,40 +32,26 @@ def get_result(row: pd.DataFrame) -> str:
         return 'D'
 
 
-def get_home_wins(row: pd.DataFrame) -> int:
+def get_team_wins(row: pd.DataFrame, home: bool = True) -> int:
     """
-    Calculate the number of home wins in the last five matches.
+    Calculate the number of wins in the last five matches.
 
     Parameters:
     -----------
     row : pd.DataFrame
         A row of the dataframe containing the last five home match results.
+    home : bool, default=True
+        Whether to calculate the home team wins. Set to False for away team.
 
     Returns:
     --------
     int
-        Number of home wins in the last five matches.
+        Number of wins in the last five matches.
     """
-    cols = ['HM1', 'HM2', 'HM3', 'HM4', 'HM5']
-    wins = [1 for el in cols if row[el] == 'W']
-    return len(wins)
-
-
-def get_away_wins(row: pd.DataFrame) -> int:
-    """
-    Calculate the number of away wins in the last five matches.
-
-    Parameters:
-    -----------
-    row : pd.DataFrame
-        A row of the dataframe containing the last five away match results.
-
-    Returns:
-    --------
-    int
-        Number of away wins in the last five matches.
-    """
-    cols = ['AM1', 'AM2', 'AM3', 'AM4', 'AM5']
+    if home:
+        cols = ['HM1', 'HM2', 'HM3', 'HM4', 'HM5']
+    else:
+        cols = ['AM1', 'AM2', 'AM3', 'AM4', 'AM5']
     wins = [1 for el in cols if row[el] == 'W']
     return len(wins)
 
@@ -243,8 +229,12 @@ def create_new_columns(epl_data: pd.DataFrame, standings: pd.DataFrame) \
     epl_data['Result'] = epl_data.apply(get_result, axis=1)
 
     # update data to include HomeWins and AwayWins
-    epl_data['HomeWins'] = epl_data.apply(get_home_wins, axis=1)
-    epl_data['AwayWins'] = epl_data.apply(get_away_wins, axis=1)
+    epl_data['HomeWins'] = epl_data.apply(
+        lambda row: get_team_wins(row, home=True), axis=1)
+    epl_data['AwayWins'] = epl_data.apply(
+        lambda row: get_team_wins(row, home=False), axis=1)
+    
+    # update data to include year
     epl_data['Year'] = epl_data['Date'].apply(get_year)
 
     # update data to include previous year rankings
@@ -275,12 +265,16 @@ def update_targets(train_target: pd.DataFrame,
     pd.DataFrame
         Encoded training and testing target variables.
     """
-    label_enc = LabelEncoder()
+    # reset index for downstream combination with new DataFrames
     train_target.reset_index(inplace=True)
     train_target.drop(columns='index', inplace=True)
     test_target.reset_index(inplace=True)
     test_target.drop(columns='index', inplace=True)
 
+    # create label encoder for target columns
+    label_enc = LabelEncoder()
+
+    # transform the target columns
     train_target['Result'] = label_enc.fit_transform(train_target['Result'])
     test_target['Result'] = label_enc.transform(test_target['Result'])
 
@@ -310,6 +304,7 @@ def process_data(epl_data: pd.DataFrame, standings_data: pd.DataFrame,
     # update the standings to reflect accurate data for all years
     standings = update_standings(standings=standings_data)
 
+    # create all necessary columns for feature engineering
     epl_data = create_new_columns(epl_data=epl_data, standings=standings)
 
     # save 'Result' column to be used as y variable
@@ -337,6 +332,7 @@ def process_data(epl_data: pd.DataFrame, standings_data: pd.DataFrame,
     # update and encode target columns
     train_y, test_y = update_targets(train_y, test_y)
 
+    # recombine targets with the dataframe for downstream tasks
     train_data['Result'] = train_y
     test_data['Result'] = test_y
 

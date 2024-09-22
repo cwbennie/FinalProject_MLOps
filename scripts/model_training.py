@@ -1,3 +1,4 @@
+from typing import Tuple
 import mlflow
 import numpy as np
 import pandas as pd
@@ -7,8 +8,6 @@ from sklearn.metrics import f1_score, accuracy_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
-from typing import Tuple
-from pathlib import Path
 
 
 def strat_kfold(model, X: pd.DataFrame, y: pd.DataFrame,
@@ -37,6 +36,7 @@ def strat_kfold(model, X: pd.DataFrame, y: pd.DataFrame,
         A tuple containing the mean accuracy and mean F1-score
         across all folds.
     """
+    # create lists to track accuracy and f1 scores
     accs = list()
     f1_scores = list()
     skf = StratifiedKFold(n_splits=num_splits, shuffle=True,
@@ -74,7 +74,7 @@ def update_params(params: dict) -> Tuple[dict, dict]:
         - The updated model parameter dictionary.
         - The non-model parameter dictionary (e.g., train data, labels, etc.).
     """
-    del params['exp_name']
+    # create new dictionary to track non-model parameters for training loops
     non_model_params = dict()
     nmp_names = ['type', 'train_data', 'y',
                  'random_state', 'num_splits']
@@ -103,6 +103,7 @@ def mlflow_obj(params: dict) -> dict:
         - 'run_id': The MLflow run ID associated with the experiment.
     """
     with mlflow.start_run() as run:
+        # update parameter dictionary to use in training
         params, id_params = update_params(params=params)
 
         # instantiate the models and perform k-fold CV
@@ -133,6 +134,7 @@ def mlflow_obj(params: dict) -> dict:
         else:
             mlflow.sklearn.log_model(clf, artifact_path='better_models')
 
+        # retrieve run_id to be used in logging best model
         run_id = run.info.run_id
 
         mlflow.end_run()
@@ -175,7 +177,6 @@ def hp_tuning(exp_name: str, train_data: pd.DataFrame,
             'min_samples_split': hp.randint('dtree_min_samples_split', 2, 10),
             'train_data': train_data, 'y': train_y, 'num_splits': num_splits,
             'random_state': random_state,
-            'exp_name': exp_name
             },
         {
             'type': 'random_forest',
@@ -184,7 +185,6 @@ def hp_tuning(exp_name: str, train_data: pd.DataFrame,
             'criterion': hp.choice('criterion', ['gini', 'entropy']),
             'train_data': train_data, 'y': train_y, 'num_splits': num_splits,
             'random_state': random_state,
-            'exp_name': exp_name
             },
         {
             'type': 'xgboost',
@@ -198,7 +198,6 @@ def hp_tuning(exp_name: str, train_data: pd.DataFrame,
             'objective': 'multi:softmax',
             'train_data': train_data, 'y': train_y, 'num_splits': num_splits,
             'random_state': random_state,
-            'exp_name': exp_name
             }])
 
     algo = tpe.suggest
@@ -206,13 +205,14 @@ def hp_tuning(exp_name: str, train_data: pd.DataFrame,
     best_result = fmin(fn=mlflow_obj, space=search_space,
                        algo=algo, max_evals=32, trials=trials)
 
+    # access the best run to get the run_id
     best_run = min(trials.results, key=lambda x: x['loss'])
+    best_run_id = best_run['run_id']
 
+    # update result dictionary to include name of classifier
     classifier_types = {0: 'decision_tree', 1: 'random_forest',
                         2: 'xgboost'}
     c_key = best_result['classifier_type']
     best_result['classifier_type'] = classifier_types[c_key]
-
-    best_run_id = best_run['run_id']
 
     return best_result, best_run_id
