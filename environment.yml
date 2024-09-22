@@ -6,4 +6,5 @@ dependencies:
   - pandas=2.2.2
   - scikit-learn=1.5.1
   - great_expectations=0.18.19
+  - metaflow=2.12.20
   - pip

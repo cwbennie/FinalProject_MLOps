@@ -8,3 +8,4 @@ scripts/.metaflow
 scripts/mlartifacts/
 scripts/mlflow.db
 scripts/mlruns/
+scripts/__pycache__/
