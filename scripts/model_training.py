@@ -9,6 +9,7 @@ from sklearn.metrics import f1_score, accuracy_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
+import warnings
 
 
 def strat_kfold(model, X: pd.DataFrame, y: pd.DataFrame,
@@ -251,16 +252,18 @@ def get_param_grids(random_state: int = 42) -> List[Tuple[object, dict]]:
 def search_cv(train_data: pd.DataFrame, train_y: pd.DataFrame,
               clf_info: tuple, scoring: dict, grid: bool = True,
               num_splits: int = 5, random_state: int = 42) -> Tuple[dict, str]:
+    # warnings.filterwarnings("ignore")
     clf, clf_grid, clf_name = clf_info
     if grid:
         search = GridSearchCV(estimator=clf, param_grid=clf_grid,
-                              cv=num_splits, n_jobs=-1,
-                              scoring=scoring)
+                              cv=num_splits, n_jobs=2,
+                              scoring=scoring, refit='accuracy')
     else:
         search = RandomizedSearchCV(estimator=clf,
                                     param_distributions=clf_grid,
-                                    scoring=scoring, n_jobs=-1,
-                                    cv=num_splits, random_state=random_state)
+                                    scoring=scoring, n_jobs=2,
+                                    cv=num_splits, random_state=random_state,
+                                    refit='accuracy', n_iter=5)
 
     train_x, val_x, tmp_y, val_y = train_test_split(train_data, train_y,
                                                     test_size=0.2,
