@@ -5,7 +5,6 @@ stages:
       - data/final_dataset.csv
       - scripts/update_epl_data.py
     outs:
-      - data/pipeline.pkl
       - data/processed_train.csv
       - data/processed_test.csv
     params:
