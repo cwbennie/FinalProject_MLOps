@@ -9,3 +9,7 @@ scripts/mlartifacts/
 scripts/mlflow.db
 scripts/mlruns/
 scripts/__pycache__/
+mlruns
+mlartifacts
+scripts/mlflow
+app/.metaflow
