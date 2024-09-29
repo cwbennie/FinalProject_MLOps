@@ -15,3 +15,6 @@ scripts/mlflow
 app/.metaflow
 app/scripts/.metaflow
 *__pycache__
+*scratch.py
+*.tfstate
+app/scripts/mlflow*
