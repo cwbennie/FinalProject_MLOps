@@ -13,3 +13,4 @@ mlruns
 mlartifacts
 scripts/mlflow
 app/.metaflow
+app/scripts/.metaflow
