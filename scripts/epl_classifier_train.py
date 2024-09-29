@@ -51,7 +51,7 @@ class EPLClassifierTrain(FlowSpec):
         mlflow.set_tracking_uri('http://127.0.0.1:8080')
         mlflow.set_experiment(self.exp_name)
         self.best_run, self.best_id = mtrain.hp_tuning(
-            exp_name=self.exp_name, train_data=self.train_data,
+            train_data=self.train_data,
             train_y=self.train_y, num_splits=self.num_splits,
             random_state=self.random_state)
 
@@ -71,7 +71,7 @@ class EPLClassifierTrain(FlowSpec):
     @step
     def end(self):
         print('Training Flow complete')
-        print(f'Best model type: {self.best_run['classifier_type']}')
+        print(f"Best model type: {self.best_run['classifier_type']}")
         print(f'Best model id: {self.best_id}')
 
 

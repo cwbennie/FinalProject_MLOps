@@ -1,4 +1,5 @@
 from typing import Tuple
+import pickle
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
@@ -278,7 +279,19 @@ def update_targets(train_target: pd.DataFrame,
     train_target['Result'] = label_enc.fit_transform(train_target['Result'])
     test_target['Result'] = label_enc.transform(test_target['Result'])
 
-    return train_target['Result'], test_target['Result']
+    return train_target['Result'], test_target['Result'], label_enc
+
+
+def save_data(train: pd.DataFrame, train_path: str,
+              test: pd.DataFrame, test_path: str,
+              standing_df: pd.DataFrame, standings_new: str,
+              target_encoder: LabelEncoder, enc_path: str):
+    train.to_csv(train_path)
+    test.to_csv(test_path)
+    standing_df.to_csv(standings_new)
+
+    with open(enc_path, 'wb') as f:
+        pickle.dump(target_encoder, f)
 
 
 def process_data(epl_data: pd.DataFrame, standings_data: pd.DataFrame,
@@ -330,10 +343,15 @@ def process_data(epl_data: pd.DataFrame, standings_data: pd.DataFrame,
                                             chi2pct=feature_percentile)
 
     # update and encode target columns
-    train_y, test_y = update_targets(train_y, test_y)
+    train_y, test_y, target_enc = update_targets(train_y, test_y)
 
     # recombine targets with the dataframe for downstream tasks
     train_data['Result'] = train_y
     test_data['Result'] = test_y
+
+    save_data(train_data, '../data/processed_train.csv',
+              test_data, '../data/processed_test.csv',
+              standings, '../data/processed_standings.csv',
+              target_enc, '../data/encoder.pkl')
 
     return train_data, test_data, standings
