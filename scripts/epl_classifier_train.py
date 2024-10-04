@@ -8,7 +8,7 @@ class EPLClassifierTrain(FlowSpec):
                           type=str, required=False)
     standings = Parameter('standings_path', default='../data/EPLStandings.csv',
                           type=str, required=False)
-    feature_pct = Parameter('feature_pct', default=75, type=int,
+    feature_pct = Parameter('feature_pct', default=50, type=int,
                             required=False)
     num_splits = Parameter('cv_splits', default=5,
                            type=int, required=False)

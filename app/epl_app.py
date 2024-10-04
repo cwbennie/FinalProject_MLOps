@@ -1,4 +1,5 @@
 from typing import List
+import os
 from fastapi import FastAPI
 import uvicorn
 import mlflow
@@ -7,7 +8,7 @@ import scripts.model_inference as model_inf
 import pandas as pd
 import numpy as np
 from pydantic import BaseModel
-from metaflow import Flow
+
 
 app = FastAPI(
     title="EPL Match Outcome Predictions",
@@ -30,18 +31,22 @@ class request_body(BaseModel):
 # want to load the model here
 def load_artifacts():
     global epl_model, team_history, encoder, valid_teams
-    train_run = Flow('EPLClassifierTrain').latest_run
-    best_id = train_run['model_training'].task.data.best_id
-    exp_name = train_run['model_training'].task.data.exp_name
-    mlflow.set_tracking_uri('http://127.0.0.1:8080')
-    mlflow.set_experiment(exp_name)
+    RUN_ID = os.environ['MLFLOW_RUNID']
+    EXP_NAME = os.environ['MLFLOW_EXPNAME']
+    mlflow.set_tracking_uri('http://192.168.5.6:8080')
+    mlflow.set_experiment(EXP_NAME)
 
-    model_uri = f'runs:/{best_id}/better_models'
+    model_uri = f'runs:/{RUN_ID}/better_models'
 
     epl_model = mlflow.sklearn.load_model(model_uri)
-    team_history = train_run['process_data'].task.data.train_data
+    mlflow.artifacts.download_artifacts(run_id=RUN_ID,
+                                        artifact_path='x_train.pkl',
+                                        dst_path='mlflow_data')
 
-    with open('../data/encoder.pkl', 'rb') as f:
+    with open('mlflow_data/x_train.pkl', 'rb') as f:
+        team_history = pickle.load(f)
+
+    with open('mlflow_data/encoder.pkl', 'rb') as f:
         encoder = pickle.load(f)
 
     valid_teams = ['Arsenal', 'Aston Villa', 'Bournemouth', 'Chelsea',
@@ -49,6 +54,7 @@ def load_artifacts():
                    'Man City', 'Man United', 'Newcastle', 'Norwich',
                    'Southampton', 'Stoke', 'Sunderland', 'Swansea',
                    'Tottenham', 'Watford', 'West Brom', 'West Ham']
+
 
 # Defining path operation for /predict endpoint
 @app.post('/predict')
@@ -71,10 +77,18 @@ def predict(data: request_body):
 
     if chk[0] == 'H':
         pred = 'Home'
+        win_team = home_team
     elif chk[0] == 'A':
         pred = 'Away'
+        win_team = away_team
     else:
         pred = 'Draw'
+        win_team = 'Draw'
+
+    model_pred = pd.DataFrame([{'Result': pred,
+                                'Winning Team': win_team,
+                                'Win Probability': max(model_out[0].tolist())}])
+    model_pred.to_csv('predictions/new_prediction.csv')
 
     # generate prediction
     return {'Predictions': pred,
