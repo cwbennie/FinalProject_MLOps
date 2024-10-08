@@ -33,12 +33,13 @@ def load_artifacts():
     global epl_model, team_history, encoder, valid_teams
     RUN_ID = os.environ['MLFLOW_RUNID']
     EXP_NAME = os.environ['MLFLOW_EXPNAME']
-    mlflow.set_tracking_uri('http://192.168.5.6:8080')
+    MLFLOW_URI = os.environ['MLFLOW_URI']
+    mlflow.set_tracking_uri(MLFLOW_URI)
     mlflow.set_experiment(EXP_NAME)
 
     model_uri = f'runs:/{RUN_ID}/better_models'
 
-    epl_model = mlflow.sklearn.load_model(model_uri)
+    epl_model = mlflow.xgboost.load_model(model_uri)
     mlflow.artifacts.download_artifacts(run_id=RUN_ID,
                                         artifact_path='x_train.pkl',
                                         dst_path='mlflow_data')
@@ -85,9 +86,11 @@ def predict(data: request_body):
         pred = 'Draw'
         win_team = 'Draw'
 
-    model_pred = pd.DataFrame([{'Result': pred,
-                                'Winning Team': win_team,
-                                'Win Probability': max(model_out[0].tolist())}])
+    model_pred = pd.DataFrame([
+        {'Result': pred, 'Winning Team': win_team,
+         'Win Probability': max(model_out[0].tolist())}])
+
+    os.makedirs('predictions', exist_ok=True)
     model_pred.to_csv('predictions/new_prediction.csv')
 
     # generate prediction

@@ -1,0 +1,14 @@
+setuptools
+fastapi==0.115.0
+uvicorn==0.30.6
+mlflow==2.15.1
+pandas==2.2.2
+numpy==1.26.4
+pydantic==2.8.2
+metaflow==2.12.20
+scikit-learn==1.5.1
+great_expectations==0.18.19
+xgboost==2.1.1
+dvc==3.55.1
+feature-engine==1.8.1
+hyperopt==0.2.7
