@@ -87,6 +87,6 @@ if __name__ == '__main__':
                                       '../../data/processed_test.csv')
 
     kl_divergence(train_data, test_data,
-                  'HTGS', '../monitoring/home_team_goals_kl_div.png')
+                  'HTGS', './plots/home_team_goals_kl_div.png')
     kl_divergence(train_data, test_data,
-                  'ATGC', '../monitoring/away_team_goals_kl_div.png')
+                  'ATGC', './plots/away_team_goals_kl_div.png')

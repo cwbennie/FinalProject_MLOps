@@ -40,7 +40,7 @@ class EPLPredict(FlowSpec):
 
     @step
     def test_predict(self):
-        from model_inference import predict
+        from utils.model_inference import predict
 
         self.predictions, self.accuracy, self.mod_f1 = predict(
             model=self.logged_model, test_data=self.test_data,

@@ -26,9 +26,9 @@ def kl_divergence(train_data: pd.DataFrame, test_data: pd.DataFrame,
     test_col = test_data[target_col]
     # Calculate histograms for both columns (P and Q distributions)
     train_hist, bin_edges = np.histogram(train_col, bins=bins,
-                                     density=True)
+                                         density=True)
     test_hist, _ = np.histogram(test_col, bins=bin_edges,
-                             density=True)
+                                density=True)
 
     # Create probability distributions
     p_prob = train_hist / np.sum(train_hist)

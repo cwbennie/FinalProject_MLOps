@@ -44,7 +44,7 @@ class EPLKubernetesTrain(FlowSpec):
     @step
     def process_data(self):
         """Step to process EPL training data to be used in training"""
-        import epl_processing as ep
+        import utils.epl_processing as ep
         self.train_data, self.test_data, self.standings_df = \
             ep.process_data(epl_data=self.data_df,
                             standings_data=self.standings_df,
@@ -58,7 +58,7 @@ class EPLKubernetesTrain(FlowSpec):
 
     @step
     def prepare_grids(self):
-        import model_training as mtrain
+        import utils.model_training as mtrain
         self.param_grids = mtrain.get_param_grids(self.random_state)
 
         self.next(self.model_training, foreach='param_grids')
@@ -68,7 +68,7 @@ class EPLKubernetesTrain(FlowSpec):
     @timeout(minutes=5)
     @step
     def model_training(self):
-        import model_training as mtrain
+        import utils.model_training as mtrain
         import mlflow
         # perform mlflow training using sklearn grid or random search
         mlflow.set_tracking_uri(self.mlflow_uri)

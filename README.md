@@ -4,9 +4,13 @@
 
 This repository contains the code and infrastructure components for training, evaluating, and deploying a machine learning model to predict the outcomes of English Premier League (EPL) soccer matches. The project demonstrates the integration of various MLOps tools and practices, such as data versioning, model management, and orchestration using industry-standard technologies.
 
+## Architecure
+![alt text](model_architecture.png)
+
 ## Table of Contents
 - [MSDS 680 - MLOps Final Project](#msds-680---mlops-final-project)
   - [Project Overview](#project-overview)
+  - [Architecure](#architecure)
   - [Table of Contents](#table-of-contents)
   - [Purpose](#purpose)
   - [Setup and Installation](#setup-and-installation)
