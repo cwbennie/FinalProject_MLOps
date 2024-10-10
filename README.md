@@ -163,6 +163,8 @@ The **FastAPI** application located in the `app/` directory serves as a predicti
 
 ### Building the Docker Image
 
+NOTE: Before building the provided Docker image, you should change the epl_app.py to point towards your own MLFlow registry and server to get the model and provide inference.
+
 To build and run the FastAPI app using Docker:
 
 1. **Build the Docker image**:
