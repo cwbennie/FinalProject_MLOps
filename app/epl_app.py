@@ -4,10 +4,10 @@ from fastapi import FastAPI
 import uvicorn
 import mlflow
 import pickle
-import scripts.model_inference as model_inf
 import pandas as pd
 import numpy as np
 from pydantic import BaseModel
+import scripts.flows.utils.model_inference as model_inf
 
 
 app = FastAPI(

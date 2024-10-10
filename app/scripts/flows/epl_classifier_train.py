@@ -4,9 +4,11 @@ from metaflow import FlowSpec, Parameter, step
 class EPLClassifierTrain(FlowSpec):
     """Metaflow Flow to process data and train model to
     classify outcomes of English Premier League matches."""
-    data_path = Parameter('data_path', default='../data/final_dataset.csv',
+    data_path = Parameter('data_path',
+                          default='../../../data/final_dataset.csv',
                           type=str, required=False)
-    standings = Parameter('standings_path', default='../data/EPLStandings.csv',
+    standings = Parameter('standings_path',
+                          default='../../../data/EPLStandings.csv',
                           type=str, required=False)
     feature_pct = Parameter('feature_pct', default=75, type=int,
                             required=False)
@@ -31,7 +33,7 @@ class EPLClassifierTrain(FlowSpec):
     @step
     def process_data(self):
         """Step to process EPL training data to be used in training"""
-        import epl_processing as ep
+        import utils.epl_processing as ep
         self.train_data, self.test_data, self.standings_df = \
             ep.process_data(epl_data=self.data_df,
                             standings_data=self.standings_df,
@@ -45,7 +47,7 @@ class EPLClassifierTrain(FlowSpec):
 
     @step
     def model_training(self):
-        import model_training as mtrain
+        import utils.model_training as mtrain
         import mlflow
         # perform mlflow training using hyperopt
         mlflow.set_tracking_uri('http://127.0.0.1:8080')

@@ -5,7 +5,7 @@ class EPLPredict(FlowSpec):
     """Metaflow Flow to process data and train model to
     classify outcomes of English Premier League matches."""
     output_path = Parameter('output', type=str,
-                            default='../data/metaflow_predictions.csv')
+                            default='../.././data/metaflow_predictions.csv')
     partial = Parameter('partial_inference', type=bool,
                         default=True)
     test_size = Parameter('test_size', type=float, default=0.2)
@@ -40,7 +40,7 @@ class EPLPredict(FlowSpec):
 
     @step
     def test_predict(self):
-        from model_inference import predict
+        from utils.model_inference import predict
 
         self.predictions, self.accuracy, self.mod_f1 = predict(
             model=self.logged_model, test_data=self.test_data,

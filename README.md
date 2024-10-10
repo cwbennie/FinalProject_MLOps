@@ -105,13 +105,13 @@ Model training and inference are managed using **Metaflow**. Metaflow allows for
 To train the model locally:
 
 ```bash
-python scripts/epl_classifier_train.py run
+python scripts/flows/epl_classifier_train.py run
 ```
 
 To train the model on Kubernetes:
 
 ```bash
-python scripts/epl_kube_run.py --environment kubernetes run
+python scripts/flows/epl_kube_run.py --environment kubernetes run
 ```
 
 ### Running Inference
@@ -119,15 +119,15 @@ python scripts/epl_kube_run.py --environment kubernetes run
 Inference can be run locally or on the cloud using Metaflow:
 
 ```bash
-python scripts/epl_predict.py run
+python scripts/flows/epl_predict.py run
 ```
 
 ## Orchestration with Metaflow
 
 Metaflow is used to orchestrate model training and inference flows. Flows are defined using a series of steps that can run independently or in parallel.
 
-- **Train Flow**: Located in `scripts/epl_classifier_train.py`.
-- **Inference Flow**: Located in `scripts/epl_predict.py`.
+- **Train Flow**: Located in `scripts/flows/epl_classifier_train.py`.
+- **Inference Flow**: Located in `scripts/flows/epl_predict.py`.
 
 ## Running Tests with Great Expectations
 

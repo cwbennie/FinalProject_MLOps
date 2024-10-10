@@ -81,9 +81,9 @@ def load_data(train_path: str, test_path: str)\
 
 
 if __name__ == '__main__':
-    train_data, test_data, _, _ = load_data('../../data/processed_train.csv',
-                                            '../../data/processed_test.csv')
-    train_output = '../monitoring/train_prediction_probabilities.png'
-    test_output = '../monitoring/test_prediction_probabilities.png'
+    train_data, test_data, _, _ = load_data('../../../data/processed_train.csv',
+                                            '../../../data/processed_test.csv')
+    train_output = './plots/train_prediction_probabilities.png'
+    test_output = './plots/test_prediction_probabilities.png'
     plot_predicted_probabilities(train_data, output_path=train_output)
     plot_predicted_probabilities(test_data, output_path=test_output)
