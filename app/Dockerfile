@@ -23,7 +23,7 @@ RUN mkdir -p /app/scripts /app/data
 
 # Copy application files
 COPY mlflow_data /app/mlflow_data
-COPY scripts/model_inference.py /app/scripts/
+COPY scripts/ /app/scripts/
 COPY epl_app.py /app/
 
 # Expose the port for the FastAPI application
