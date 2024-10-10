@@ -9,8 +9,8 @@ stages:
       size: 1319348
     - path: scripts/update_epl_data.py
       hash: md5
-      md5: 56fd213dc691a5b56ed619878e9d5687
-      size: 11875
+      md5: ac2a70b880eb323f01a907255528121e
+      size: 14094
     params:
       params.yaml:
         features.chi2percentile: 75
@@ -18,9 +18,9 @@ stages:
     outs:
     - path: data/processed_test.csv
       hash: md5
-      md5: 0e491a006ae7c0482dbec7522d5e045b
-      size: 1219490
+      md5: 4df9cfe9d4e8a1cba817e49726967532
+      size: 816693
     - path: data/processed_train.csv
       hash: md5
-      md5: eda9f0137362cc34a2c81b479019084d
-      size: 4875025
+      md5: de6d841412e8ff3a7305ab350eb0b94e
+      size: 3255938

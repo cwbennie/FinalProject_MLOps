@@ -244,7 +244,7 @@ def get_param_grids(random_state: int = 42) -> List[Tuple[object, dict]]:
     }
     xgb_params = {
         'objective': ['multi:softmax'],
-        'max_depth': range(2, 21),
+        'max_depth': range(2, 10),
         'eta': np.arange(0.1, 0.51, 0.1),
         'colsample_bynode': np.arange(0.3, 0.81, 0.1),
         'n_estimators': range(100, 1001, 100),
