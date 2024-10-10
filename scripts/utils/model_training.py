@@ -1,16 +1,15 @@
 from typing import Tuple, List
-import os
-import pickle
 import mlflow
 import numpy as np
 import pandas as pd
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
-from sklearn.model_selection import StratifiedKFold, \
+from sklearn.model_selection import StratifiedKFold,\
     RandomizedSearchCV, GridSearchCV, train_test_split
 from sklearn.metrics import f1_score, accuracy_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
+import warnings
 
 
 def strat_kfold(model, X: pd.DataFrame, y: pd.DataFrame,
@@ -129,11 +128,7 @@ def mlflow_obj(params: dict) -> dict:
         mlflow.log_param('kfold_random_state', 42)
         mlflow.log_metric("validation_acc", acc)
         mlflow.log_metric('f1_score', f1)
-        os.makedirs('save_data', exist_ok=True)
-        with open('save_data/x_train.pkl', 'wb') as fname:
-            pickle.dump(id_params['train_data'], fname)
-
-        mlflow.log_artifact('save_data/x_train.pkl')
+        mlflow.log_artifacts('save_data/')
 
         # log models
         if id_params['type'] == 'xgboost':
@@ -244,7 +239,7 @@ def get_param_grids(random_state: int = 42) -> List[Tuple[object, dict]]:
     }
     xgb_params = {
         'objective': ['multi:softmax'],
-        'max_depth': range(2, 10),
+        'max_depth': range(2, 21),
         'eta': np.arange(0.1, 0.51, 0.1),
         'colsample_bynode': np.arange(0.3, 0.81, 0.1),
         'n_estimators': range(100, 1001, 100),
@@ -291,13 +286,7 @@ def search_cv(train_data: pd.DataFrame, train_y: pd.DataFrame,
         # log metrics
         mlflow.log_metric("validation_acc", val_acc)
         mlflow.log_metric('f1_score', mod_f1)
-
-        os.makedirs('save_data', exist_ok=True)
-
-        with open('save_data/x_train.pkl', 'wb') as fname:
-            pickle.dump(train_data, fname)
-
-        mlflow.log_artifact('save_data/x_train.pkl')
+        mlflow.log_artifacts('save_data/')
 
         # log models
         if clf_name == 'xgboost':

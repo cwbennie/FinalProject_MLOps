@@ -2,7 +2,6 @@ from typing import Tuple
 import pickle
 import pandas as pd
 import numpy as np
-import feature_engine.encoding as fe
 from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.pipeline import Pipeline
@@ -58,38 +57,6 @@ def get_team_wins(row: pd.DataFrame, home: bool = True) -> int:
     return len(wins)
 
 
-def encode_rare_teams(train_data: pd.DataFrame,
-                      test_data: pd.DataFrame) -> Tuple[pd.DataFrame,
-                                                        pd.DataFrame]:
-    ht_enc = fe.RareLabelEncoder(tol=0.009, replace_with='Rare')
-    at_enc = fe.RareLabelEncoder(tol=0.009, replace_with='Rare')
-
-    train_data['HomeTeam'] = ht_enc.fit_transform(train_data[['HomeTeam']])
-    test_data['HomeTeam'] = ht_enc.transform(test_data[['HomeTeam']])
-
-    train_data['AwayTeam'] = at_enc.fit_transform(train_data[['AwayTeam']])
-    test_data['AwayTeam'] = at_enc.transform(train_data[['AwayTeam']])
-
-    return train_data, test_data
-
-
-def scale_by_match_week(train_data: pd.DataFrame,
-                        test_data: pd.DataFrame) -> Tuple[pd.DataFrame,
-                                                          pd.DataFrame]:
-    weeks = list(train_data['MW'].unique())
-    for week in weeks:
-        for col in ['HTGS', 'ATGS', 'HTGC', 'ATGC']:
-            train_inds = train_data[train_data['MW'] == week].index
-            test_inds = test_data[test_data['MW'] == week].index
-            scaler = StandardScaler()
-            train_data.loc[train_inds, [col]] = scaler.fit_transform(
-                train_data.loc[train_inds, [col]])
-            test_data.loc[test_inds, [col]] = scaler.transform(
-                test_data.loc[test_inds, [col]])
-
-    return train_data, test_data
-
-
 def update_pipeline(train_data: pd.DataFrame, test_data: pd.DataFrame,
                     train_y: pd.DataFrame, chi2pct: int = 75) -> \
                     Tuple[pd.DataFrame, pd.DataFrame]:
@@ -114,12 +81,6 @@ def update_pipeline(train_data: pd.DataFrame, test_data: pd.DataFrame,
     Tuple[pd.DataFrame, pd.DataFrame]
         Transformed training and testing data as dataframes.
     """
-    # update team column to replace rare occurences with 'Rare' class
-    train_data, test_data = encode_rare_teams(train_data, test_data)
-
-    # scale certain columns by match week
-    train_data, test_data = scale_by_match_week(train_data, test_data)
-
     # Pipeline object to transform numerical columns
     numeric_transformer = Pipeline(
         steps=[('scaler', StandardScaler())]
@@ -134,12 +95,11 @@ def update_pipeline(train_data: pd.DataFrame, test_data: pd.DataFrame,
     column_transform = ColumnTransformer(
         transformers=[
             ('num', numeric_transformer,
-             ['HTFormPts', 'ATFormPts', 'HomeStanding', 'AwayStanding']),
+             make_column_selector(dtype_include=['float', 'int'])),
             ('cat', cat_transformer,
              make_column_selector(dtype_include=['object']))
         ],
-        verbose_feature_names_out=False,
-        remainder='passthrough'
+        verbose_feature_names_out=False
     )
 
     processor = Pipeline(
@@ -152,8 +112,8 @@ def update_pipeline(train_data: pd.DataFrame, test_data: pd.DataFrame,
     train_data = processor.transform(train_data)
     test_data = processor.transform(test_data)
 
-    train_data = pd.DataFrame(train_data, columns=cols)
-    test_data = pd.DataFrame(test_data, columns=cols)
+    train_data = pd.DataFrame.sparse.from_spmatrix(train_data, columns=cols)
+    test_data = pd.DataFrame.sparse.from_spmatrix(test_data, columns=cols)
 
     return train_data, test_data
 
@@ -274,7 +234,7 @@ def create_new_columns(epl_data: pd.DataFrame, standings: pd.DataFrame) \
         lambda row: get_team_wins(row, home=True), axis=1)
     epl_data['AwayWins'] = epl_data.apply(
         lambda row: get_team_wins(row, home=False), axis=1)
-
+    
     # update data to include year
     epl_data['Year'] = epl_data['Date'].apply(get_year)
 
@@ -374,7 +334,7 @@ def process_data(epl_data: pd.DataFrame, standings_data: pd.DataFrame,
     # train-test split on the data
     train_data, test_data, train_y, test_y = train_test_split(epl_data, y,
                                                               test_size=0.2,
-                                                              shuffle=False)
+                                                              shuffle=True)
 
     # normalize and encode columns columns
     train_data, test_data = update_pipeline(train_data=train_data,
