@@ -95,6 +95,7 @@ dvc add data/EPLStandings.csv
 ## Create a Pipeline
 
 Configure pipelines using `dvc.yaml` and run the pipeline to reproduce data transformations and feature engineering.
+Running the pipeline is the essential first step in order to create and save the training and test data sets.
 
 ## Model Training and Inference
 
